@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>วงล้อแจกของรางวัล</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+/* Layout: a lucky-draw booth — the wheel is the stage on the left, the prize board (what's left, who won) on the right; stacks on phones. */
+:root {
+  --bg: #f6f3ee;
+  --surface: #ffffff;
+  --ink: #1f2430;
+  --muted: #6a6f7c;
+  --line: #e3ddd2;
+  --accent: #b8323a;      /* lucky-draw red */
+  --accent-ink: #ffffff;
+  --gold: #c9962b;
+  --hub: #1f2430;
+  --good: #2f7d4f;
+  --glow: rgba(201, 150, 43, .55);
+  --font-display: "Mitr", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171d; --surface: #1e2129; --ink: #eceae6; --muted: #9a9ea9; --line: #2e323c;
+    --accent: #e0545c; --accent-ink: #1a0d0e; --gold: #e2b452; --hub: #0d0f13; --good: #5fbf86;
+    --glow: rgba(226, 180, 82, .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171d; --surface: #1e2129; --ink: #eceae6; --muted: #9a9ea9; --line: #2e323c;
+  --accent: #e0545c; --accent-ink: #1a0d0e; --gold: #e2b452; --hub: #0d0f13; --good: #5fbf86;
+  --glow: rgba(226, 180, 82, .45);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 40px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 24px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(26px, 5vw, 36px); line-height: 1.2; margin: 0; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.sub { margin: 4px 0 0; color: var(--muted); }
+.status { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.status.live i { background: var(--good); }
+.status.warn i { background: var(--gold); }
+
+.wrap { max-width: 720px; }
+.navbtns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.navbtn { padding: 8px 14px; border-radius: 999px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+.navbtn b { font-variant-numeric: tabular-nums; min-width: 1.6em; padding: 0 6px; border-radius: 999px; background: var(--gold); color: #1f1a10; font-size: 12px; line-height: 1.7; text-align: center; }
+.navbtn.bump b { animation: bump .5s ease; }
+@keyframes bump { 40% { transform: scale(1.4); } }
+
+.sound { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.sound button { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: transparent; }
+.sound svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sound input[type=range] { width: 90px; accent-color: var(--accent); }
+.sound .off { display: none; }
+@media (max-width: 480px) {
+  .sound input[type=range] { width: 56px; }
+  .navbtns { gap: 6px; }
+  .navbtn { padding: 6px 10px; font-size: 13px; gap: 6px; }
+  .sound { padding-right: 8px; }
+  .sound button { width: 30px; height: 30px; }
+}
+.sound.muted .on { display: none; }
+.sound.muted .off { display: inline; }
+.scrim { position: fixed; inset: 0; background: rgba(10,12,16,.4); z-index: 15; opacity: 0; transition: opacity .25s ease; }
+.scrim.open { opacity: 1; }
+.drawer {
+  position: fixed; z-index: 16; top: 0; right: 0; bottom: 0; width: min(400px, 100%);
+  background: var(--bg); border-left: 1px solid var(--line); box-shadow: -20px 0 60px rgba(0,0,0,.18);
+  display: grid; grid-template-rows: auto minmax(0, 1fr); transform: translateX(105%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+  padding-top: env(safe-area-inset-top, 0px); padding-right: env(safe-area-inset-right, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.drawer.open { transform: none; }
+@media (max-width: 640px) {
+  .drawer { top: auto; left: 0; width: 100%; max-height: 82%; border-left: 0; border-top: 1px solid var(--line); border-radius: 20px 20px 0 0;
+            transform: translateY(105%); padding-left: env(safe-area-inset-left, 0px); box-shadow: 0 -20px 60px rgba(0,0,0,.18); }
+}
+.drawer-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: 4px; flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.tab { flex: 1; padding: 8px 10px; border: 0; border-radius: 9px; font-size: 14px; background: transparent; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.tab[aria-selected="true"]:hover { background: var(--accent); }
+.x { padding: 8px 12px; border-radius: 10px; font-size: 16px; line-height: 1; }
+.drawer-body { overflow-y: auto; padding: 16px; display: grid; gap: 16px; align-content: start; }
+@media (prefers-reduced-motion: reduce) { .drawer, .scrim{ transition: none; } .navbtn.bump b { animation: none; } }
+
+.stage { display: grid; gap: 16px; justify-items: center; }
+.wheel-box { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1; border-radius: 50%; transition: box-shadow .4s ease; }
+.wheel-box.spinning { box-shadow: 0 0 0 6px var(--glow), 0 0 60px 12px var(--glow); }
+.wheel-box.won { animation: wonPulse .5s ease-in-out 3; }
+@keyframes wonPulse { 50% { box-shadow: 0 0 0 10px var(--glow), 0 0 90px 30px var(--glow); transform: scale(1.015); } }
+.wheel-box canvas { width: 100%; height: 100%; display: block; }
+.pointer {
+  position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent;
+  border-top: 34px solid var(--accent); filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); z-index: 2;
+}
+.pointer.tick { animation: tick .12s ease-out; }
+@keyframes tick { 50% { transform: translateX(-50%) rotate(-14deg); } }
+.empty-wheel {
+  position: absolute; inset: 12%; border-radius: 50%; border: 2px dashed var(--line);
+  display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted);
+  font-family: var(--font-display); font-size: 18px;
+}
+
+.controls { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+button {
+  font: inherit; cursor: pointer; border-radius: 12px; padding: 12px 22px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-weight: 500;
+  transition: transform .08s ease, background .15s ease, opacity .15s ease;
+}
+button:hover:not(:disabled) { background: color-mix(in srgb, var(--surface) 85%, var(--ink)); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.btn-spin {
+  background: var(--accent); color: var(--accent-ink); border-color: transparent;
+  font-family: var(--font-display); font-size: 20px; padding: 12px 40px; letter-spacing: .02em;
+  position: relative; overflow: hidden;
+}
+.btn-spin:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, black); }
+.btn-spin:not(:disabled)::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+  animation: shine 2.8s ease-in-out infinite;
+}
+@keyframes shine { 60%, 100% { transform: translateX(120%); } }
+.note { font-size: 13px; color: var(--muted); text-align: center; margin: 0; min-height: 1.6em; }
+
+.board { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; min-width: 0; }
+.panel h2 { font-family: var(--font-display); font-weight: 500; font-size: 18px; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.panel h2 small { font-family: var(--font-body); font-size: 13px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.stock { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.stock li { display: grid; grid-template-columns: 14px minmax(0,1fr) auto; align-items: center; gap: 10px; }
+.stock .sw { width: 14px; height: 14px; border-radius: 4px; }
+.stock .n { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.stock li.out { color: var(--muted); text-decoration: line-through; }
+.stock.admin-on li { grid-template-columns: 14px minmax(0,1fr) auto auto; }
+.adj { display: inline-flex; gap: 4px; }
+.adj button { width: 28px; height: 28px; padding: 0; border-radius: 8px; font-size: 16px; line-height: 1; }
+.manage { border-top: 1px dashed var(--line); margin-top: 16px; padding-top: 14px; display: grid; gap: 8px; }
+.manage h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 15px; }
+.addrow { display: grid; grid-template-columns: minmax(0,1fr) 72px auto; gap: 8px; }
+.addrow input { font: inherit; min-width: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.addrow input:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.addrow button { padding: 8px 16px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.addrow button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, black); }
+.manage .hint { margin: 0; }
+.bar { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: -4px; }
+.bar b { display: block; height: 100%; background: var(--gold); transition: width .5s ease; }
+
+.log { list-style: none; margin: 0; padding: 0; display: grid; }
+.log li { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.log li:first-child { border-top: 0; }
+.log li.fresh { animation: fresh 1.2s ease; }
+@keyframes fresh { from { background: var(--glow); } }
+.log .who { overflow-wrap: anywhere; }
+.log .what { font-weight: 600; text-align: right; }
+.log .me { color: var(--accent); }
+.log .acts { display: flex; gap: 6px; }
+.log .acts button { padding: 3px 10px; font-size: 12px; border-radius: 8px; }
+.log .acts .danger { border-color: var(--accent); color: var(--accent); }
+.log-empty { color: var(--muted); font-size: 14px; margin: 0; }
+.hint { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+
+.admin { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.admin button { padding: 6px 14px; font-size: 13px; border-radius: 8px; }
+.admin .danger { border-color: var(--accent); color: var(--accent); }
+
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+.overlay { position: fixed; inset: 0; background: rgba(10, 12, 16, .6); display: grid; place-items: center; z-index: 20; padding: 24px; }
+.card {
+  background: var(--surface); border-radius: 20px; padding: 28px 28px 22px; width: min(400px, 100%);
+  text-align: center; box-shadow: 0 0 0 2px var(--gold), 0 20px 80px var(--glow);
+  animation: pop .55s cubic-bezier(.2,1.5,.4,1);
+  display: grid; gap: 4px; justify-items: center;
+}
+@keyframes pop { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.card p { margin: 0; color: var(--muted); }
+.card .prize { font-family: var(--font-display); font-size: clamp(30px, 8vw, 40px); font-weight: 600; color: var(--ink); margin: 4px 0 16px; line-height: 1.25; animation: prizeIn .7s .15s both cubic-bezier(.2,1.6,.4,1); }
+@keyframes prizeIn { from { transform: translateY(14px) scale(.6); opacity: 0; } }
+.card .prize-sw { display: inline-block; width: 20px; height: 20px; border-radius: 6px; margin-right: 10px; vertical-align: middle; }
+.linkish { background: none; border: 0; color: var(--muted); font-size: 13px; text-decoration: underline; padding: 8px; margin-top: 4px; }
+.linkish:hover:not(:disabled) { background: none; color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .card, .card .prize, .pointer.tick, .wheel-box.won, .btn-spin::after, .log li.fresh { animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>วงล้อ<span>แจกของรางวัล</span></h1>
+      <p class="sub">กดหมุนได้ทุกเวลา ของที่มีคนสุ่มได้แล้วจะถูกตัดออกจากวงล้อของทุกคน</p>
+    </div>
+    <nav class="navbtns" aria-label="ข้อมูลวงล้อ">
+      <div class="sound" id="sound">
+        <button type="button" id="muteBtn" aria-label="ปิดเสียง" title="ปิด/เปิดเสียง">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="on" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="off" d="M17 9l5 6M22 9l-5 6"/></svg>
+        </button>
+        <input type="range" id="vol" min="0" max="100" step="1" value="70" aria-label="ระดับเสียง">
+      </div>
+      <button class="navbtn" type="button" id="openStock" aria-controls="drawer">ของที่เหลือ <b id="stockBadge">–</b></button>
+      <button class="navbtn" type="button" id="openLog" aria-controls="drawer">ผลการสุ่ม <b id="logBadge">0</b></button>
+    </nav>
+  </header>
+    <section class="stage" aria-label="วงล้อ">
+      <div class="wheel-box" id="wheelBox">
+        <div class="pointer" id="pointer" aria-hidden="true"></div>
+        <canvas id="wheel" role="img" aria-label="วงล้อของรางวัล"></canvas>
+        <div class="empty-wheel" id="emptyWheel" hidden>ของรางวัลหมดแล้ว<br>ขอบคุณที่ร่วมสนุก</div>
+      </div>
+      <div class="controls">
+        <button class="btn-spin" id="spinBtn" type="button" disabled>หมุนวงล้อ</button>
+        <button id="shuffleBtn" type="button" title="จัดช่องใหม่ ให้ของชนิดเดียวกันไม่อยู่ติดกัน">สลับตำแหน่ง</button>
+      </div>
+      <p class="note" id="note"></p>
+    </section>
+
+  <p style="margin:0;text-align:center"><span class="status" id="status"><i></i><span id="statusText">กำลังเชื่อมต่อ…</span></span></p>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-label="ของที่เหลือและผลการสุ่ม" inert>
+  <div class="drawer-head">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" type="button" id="tabStock" aria-selected="true" aria-controls="paneStock">ของที่เหลือ</button>
+      <button class="tab" role="tab" type="button" id="tabLog" aria-selected="false" aria-controls="paneLog">ผลการสุ่ม</button>
+    </div>
+    <button class="x" type="button" id="closeDrawer" aria-label="ปิด">✕</button>
+  </div>
+  <div class="drawer-body">
+      <div class="panel" id="paneStock" role="tabpanel">
+        <h2>ของที่เหลือ <small id="leftCount">–</small></h2>
+        <ul class="stock" id="stock"></ul>
+        <form class="manage" id="manage" hidden autocomplete="off">
+          <h3>เพิ่มของรางวัล</h3>
+          <div class="addrow">
+            <input id="addName" list="nameList" maxlength="40" placeholder="ชื่อของ เช่น ร่ม" aria-label="ชื่อของรางวัล" required>
+            <input id="addQty" type="number" min="1" max="50" value="1" aria-label="จำนวน" inputmode="numeric">
+            <button type="submit" id="addBtn">เพิ่ม</button>
+          </div>
+          <datalist id="nameList"></datalist>
+          <p class="hint">ของใหม่จะเข้าวงล้อของทุกคนทันที ใช้ปุ่ม + / − ด้านบนเพิ่มหรือลดจำนวนของที่มีอยู่ (ลดได้เฉพาะชิ้นที่ยังไม่มีใครได้)</p>
+        </form>
+      </div>
+      <div class="panel" id="paneLog" role="tabpanel" hidden>
+        <h2>ผลการสุ่ม <small id="wonCount"></small></h2>
+        <ul class="log" id="log"></ul>
+        <p class="log-empty" id="logEmpty">ยังไม่มีใครหมุน</p>
+        <p class="hint" id="logHint" hidden>กดผิด? กด “คืนของ” ที่รายการของคุณ ของชิ้นนั้นจะกลับเข้าวงล้อ</p>
+      </div>
+      <div class="admin" id="admin" hidden>
+        <span>สำหรับเจ้าของหน้า:</span>
+        <button id="resetBtn" type="button">รีเซ็ตวงล้อ</button>
+        <button id="resetYes" class="danger" type="button" hidden>ยืนยัน ล้างผลทั้งหมด</button>
+        <button id="resetNo" type="button" hidden>ยกเลิก</button>
+      </div>
+  </div>
+</aside>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="prizeName">
+    <p>ยินดีด้วย คุณได้รับ</p>
+    <div class="prize"><span class="prize-sw" id="prizeSw"></span><span id="prizeName"></span></div>
+    <button class="btn-spin" id="closeBtn" type="button">รับของ</button>
+    <button class="linkish" id="modalUndo" type="button">กดผิด คืนของชิ้นนี้เข้าวงล้อ</button>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+(function () {
+  // ---------- Prize list ----------
+  // Shared mode reads prizes from the db ("prizes" collection); this list only seeds the offline/local mode.
+  const DEFAULT_NAMES = ["หมอนอิง","หมอนอิง","กระเป๋าเดินทาง","หมวก","กระเป๋าสะพาย",
+                 "แก้วชมพู","แก้วฟ้า","แก้วส้ม","แก้วชมพู","แก้วฟ้า","แก้วส้ม","แก้วชมพู"];
+  const DEFAULT_ITEMS = DEFAULT_NAMES.map((name, i) => ({ id: "i" + String(i + 1).padStart(2, "0"), name, at: i }));
+  const KNOWN = {
+    "หมอนอิง": "#7a5cc2", "กระเป๋าเดินทาง": "#2b6f8f", "หมวก": "#3c8a5a", "กระเป๋าสะพาย": "#a86a2c",
+    "แก้วชมพู": "#e56f9e", "แก้วฟ้า": "#4aa3e0", "แก้วส้ม": "#f08a3c"
+  };
+  const EXTRA = ["#c0392b", "#14967f", "#d4a017", "#34495e", "#8bc34a", "#00838f", "#9e3d64", "#6d4c41", "#5c6bc0", "#e64a19"];
+  let assigned = {};
+  const COLORS = new Proxy({}, { get(_, name) {
+    name = String(name);
+    if (KNOWN[name]) return KNOWN[name];
+    if (assigned[name]) return assigned[name];
+    let h = 0; for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return EXTRA[h % EXTRA.length];
+  } });
+  let ITEMS = [], TYPES = [], byId = {};
+  function setItems(list) {
+    ITEMS = list.slice().sort((a, b) => (a.at || 0) - (b.at || 0) || (a.id < b.id ? -1 : 1));
+    TYPES = [...new Set(ITEMS.map(it => it.name))];
+    // give each new prize type its own colour, unused by the others
+    assigned = {}; let k = 0;
+    TYPES.filter(t => !KNOWN[t]).forEach(t => { if (k < EXTRA.length) assigned[t] = EXTRA[k++]; });
+    byId = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+    // keep this viewer's slice order, drop removed prizes, append new ones
+    const known = new Set(ITEMS.map(it => it.id));
+    const kept = (order || []).filter(id => known.has(id));
+    const added = ITEMS.map(it => it.id).filter(id => !kept.includes(id));
+    order = kept.length ? kept.concat(added) : spreadOrder(added);
+    store.set("wheel-order-v2", order);
+    const dl = $("nameList"); dl.textContent = "";
+    TYPES.forEach(t => { const o = document.createElement("option"); o.value = t; dl.appendChild(o); });
+  }
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- Elements ----------
+  const $ = id => document.getElementById(id);
+  const canvas = $("wheel"), ctx = canvas.getContext("2d");
+  const spinBtn = $("spinBtn"), shuffleBtn = $("shuffleBtn"), note = $("note"), wheelBox = $("wheelBox");
+  const statusEl = $("status"), statusText = $("statusText");
+
+  // ---------- Local helpers ----------
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  const tabId = "t" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  function shuffled(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  // Count neighbouring slices of the same type (the wheel is a circle, so last touches first).
+  function clashes(ids) {
+    if (ids.length < 2) return 0;
+    let n = 0;
+    for (let i = 0; i < ids.length; i++) if (byId[ids[i]].name === byId[ids[(i + 1) % ids.length]].name) n++;
+    return n;
+  }
+  // Random order where same-type prizes are spread apart (best of many tries).
+  function spreadOrder(ids) {
+    let best = shuffled(ids), bestScore = clashes(best);
+    for (let k = 0; k < 2000 && bestScore > 0; k++) {
+      const cand = shuffled(ids), s = clashes(cand);
+      if (s < bestScore) { best = cand; bestScore = s; }
+    }
+    return best;
+  }
+
+  // ---------- State ----------
+  let order = store.get("wheel-order-v2");
+  if (!Array.isArray(order)) order = [];
+  let rawClaims = {};       // everything in the claims store
+  let claims = {};          // itemId -> {by, at, name}
+  let shownClaims = {};     // what the wheel currently draws (frozen while spinning)
+  let rotation = 0;
+  let spinning = false;
+  let busy = false;         // undo / reset in flight
+  let mode = "connecting";  // connecting | shared | local
+  let canWrite = true, isOwner = false, isAdmin = false;
+  let db = null, user = null, myId = null, names = {};
+  let lastWin = null;       // id won in this visit (for modal undo)
+  let highlightId = null, lightPhase = 0, lightsFast = false;
+  let confirmUndo = null;   // item id awaiting undo confirmation
+  let seenLog = null;       // ids already rendered in the log
+
+  // ---------- Drawing ----------
+  function available(c) { return order.filter(id => byId[id] && !c[id]); }
+
+  function sizeCanvas() {
+    const r = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const px = Math.max(200, Math.round(r.width * dpr));
+    if (canvas.width !== px) { canvas.width = px; canvas.height = px; }
+  }
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function draw() {
+    sizeCanvas();
+    const W = canvas.width, R = W / 2, ids = available(shownClaims);
+    ctx.clearRect(0, 0, W, W);
+    $("emptyWheel").hidden = ids.length > 0 || mode === "connecting";
+    $("emptyWheel").innerHTML = ITEMS.length ? "ของรางวัลหมดแล้ว<br>ขอบคุณที่ร่วมสนุก" : "ยังไม่มีของรางวัล<br>เจ้าของหน้าเพิ่มได้ที่เมนู “ของที่เหลือ”";
+    if (!ids.length) return;
+    const seg = Math.PI * 2 / ids.length;
+    const rOuter = R * 0.94;
+    const gold = css("--gold");
+    ctx.save();
+    ctx.translate(R, R);
+    // rim
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.995, 0, Math.PI * 2);
+    const rim = ctx.createRadialGradient(0, 0, R * 0.9, 0, 0, R);
+    rim.addColorStop(0, gold); rim.addColorStop(.5, "#f3d68a"); rim.addColorStop(1, gold);
+    ctx.fillStyle = rim; ctx.fill();
+    ctx.rotate(rotation);
+    ids.forEach((id, i) => {
+      const a0 = -Math.PI / 2 + i * seg, a1 = a0 + seg;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, rOuter, a0, a1); ctx.closePath();
+      const col = COLORS[byId[id].name];
+      const g = ctx.createRadialGradient(0, 0, R * 0.12, 0, 0, rOuter);
+      g.addColorStop(0, shade(col, -0.25)); g.addColorStop(.75, col); g.addColorStop(1, shade(col, 0.15));
+      ctx.fillStyle = g; ctx.fill();
+      if (highlightId === id) {
+        ctx.fillStyle = "rgba(255,255,255," + (0.25 + 0.25 * Math.sin(performance.now() / 70)) + ")"; ctx.fill();
+      }
+      ctx.lineWidth = Math.max(2, W / 260); ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.stroke();
+      // label
+      ctx.save();
+      ctx.rotate(a0 + seg / 2);
+      ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffffff";
+      const fs = Math.min(R * 0.085, R * seg * 0.42);
+      ctx.font = `500 ${fs}px Mitr, "IBM Plex Sans Thai", sans-serif`;
+      ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 4;
+      ctx.fillText(byId[id].name, rOuter - R * 0.07, 0, rOuter * 0.62);
+      ctx.restore();
+    });
+    ctx.restore();
+    // marquee bulbs on the rim
+    ctx.save(); ctx.translate(R, R);
+    const BULBS = 24;
+    for (let k = 0; k < BULBS; k++) {
+      const a = k * Math.PI * 2 / BULBS;
+      const on = (k + lightPhase) % (lightsFast ? 3 : 2) === 0;
+      const x = Math.cos(a) * R * 0.968, y = Math.sin(a) * R * 0.968;
+      if (on) {
+        ctx.beginPath(); ctx.arc(x, y, R * 0.03, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,240,180,.35)"; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(x, y, R * 0.013, 0, Math.PI * 2);
+      ctx.fillStyle = on ? "#fffbe8" : "#a7782a"; ctx.fill();
+    }
+    // hub
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.13, 0, Math.PI * 2); ctx.fillStyle = css("--hub"); ctx.fill();
+    ctx.lineWidth = R * 0.025; ctx.strokeStyle = gold; ctx.stroke();
+    ctx.fillStyle = gold; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = `600 ${R * 0.07}px Mitr, sans-serif`; ctx.fillText(String(ids.length), 0, 0);
+    ctx.restore();
+  }
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    const t = amt < 0 ? 0 : 255, p = Math.abs(amt);
+    r = Math.round((t - r) * p + r); g = Math.round((t - g) * p + g); b = Math.round((t - b) * p + b);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // Idle marquee blink
+  setInterval(() => { if (!spinning && !reduceMotion) { lightPhase++; draw(); } }, 600);
+
+  // ---------- Board ----------
+  function canUndo(c) {
+    if (mode === "local") return true;
+    if (!canWrite) return false;
+    return isOwner || (c.by && c.by === myId);
+  }
+
+  async function renderBoard() {
+    const C = spinning ? shownClaims : claims;
+    const total = {}, left = {};
+    ITEMS.forEach(it => { total[it.name] = (total[it.name] || 0) + 1; if (!C[it.id]) left[it.name] = (left[it.name] || 0) + 1; });
+    const leftN = ITEMS.filter(it => !C[it.id]).length;
+    $("leftCount").textContent = mode === "connecting" ? "–" : leftN + " / " + ITEMS.length + " ชิ้น";
+    const ul = $("stock"); ul.textContent = "";
+    ul.classList.toggle("admin-on", isAdmin);
+    $("manage").hidden = !isAdmin;
+    TYPES.forEach(t => {
+      const n = left[t] || 0, li = document.createElement("li");
+      if (!n && mode !== "connecting") li.className = "out";
+      const sw = document.createElement("span"); sw.className = "sw"; sw.style.background = COLORS[t];
+      const nm = document.createElement("span"); nm.textContent = t;
+      const ct = document.createElement("span"); ct.className = "n"; ct.textContent = `เหลือ ${n} จาก ${total[t]}`;
+      const bar = document.createElement("span"); bar.className = "bar";
+      const b = document.createElement("b"); b.style.width = (n / total[t] * 100) + "%"; bar.appendChild(b);
+      li.append(sw, nm, ct);
+      if (isAdmin) {
+        const adj = document.createElement("span"); adj.className = "adj";
+        const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−";
+        minus.setAttribute("aria-label", "ลด " + t + " 1 ชิ้น"); minus.disabled = busy || spinning || n === 0;
+        minus.addEventListener("click", () => removeOne(t));
+        const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+";
+        plus.setAttribute("aria-label", "เพิ่ม " + t + " 1 ชิ้น"); plus.disabled = busy || spinning;
+        plus.addEventListener("click", () => addPrizes(t, 1));
+        adj.append(minus, plus); li.append(adj);
+      }
+      li.append(bar); ul.appendChild(li);
+    });
+
+    const won = Object.entries(C).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+    setBadge("stockBadge", "openStock", mode === "connecting" ? "–" : String(leftN));
+    setBadge("logBadge", "openLog", String(won.length));
+    $("wonCount").textContent = won.length ? won.length + " รายการ" : "";
+    $("logEmpty").hidden = won.length > 0;
+    $("logHint").hidden = !won.some(([, c]) => canUndo(c));
+    if (user && mode === "shared") {
+      const ids = [...new Set(won.map(w => w[1].by).filter(Boolean))];
+      try { names = ids.length ? await user.profiles(ids) : {}; } catch (e) {}
+    }
+    const log = $("log"); log.textContent = "";
+    won.forEach(([id, c]) => {
+      const li = document.createElement("li");
+      if (seenLog && !seenLog.has(id)) li.className = "fresh";
+      const who = document.createElement("span"); who.className = "who";
+      const isMe = c.by && c.by === myId;
+      const nm = mode === "local" ? "เครื่องนี้" : ((names[c.by] && names[c.by].name) || "ผู้ร่วมสนุก");
+      who.textContent = nm + (isMe && mode === "shared" ? " (คุณ)" : "");
+      if (isMe) who.classList.add("me");
+      const what = document.createElement("span"); what.className = "what"; what.textContent = byId[id].name;
+      what.style.color = COLORS[byId[id].name];
+      const acts = document.createElement("span"); acts.className = "acts";
+      if (canUndo(c)) {
+        if (confirmUndo === id) {
+          const yes = document.createElement("button"); yes.type = "button"; yes.className = "danger"; yes.textContent = "ยืนยันคืน";
+          yes.disabled = busy || spinning; yes.addEventListener("click", () => undo(id));
+          const no = document.createElement("button"); no.type = "button"; no.textContent = "ไม่";
+          no.addEventListener("click", () => { confirmUndo = null; renderBoard(); });
+          acts.append(yes, no);
+        } else {
+          const u = document.createElement("button"); u.type = "button"; u.textContent = "คืนของ";
+          u.title = "ยกเลิกรายการนี้ ของจะกลับเข้าวงล้อ";
+          u.disabled = busy || spinning; u.addEventListener("click", () => { confirmUndo = id; renderBoard(); });
+          acts.append(u);
+        }
+      }
+      li.append(who, what, acts); log.appendChild(li);
+    });
+    seenLog = new Set(won.map(w => w[0]));
+  }
+
+  let noteHold = 0;
+  function say(m) { note.textContent = m; noteHold = Date.now() + 3000; setTimeout(() => { if (!spinning) refreshControls(); }, 3100); }
+
+  function refreshControls() {
+    const left = available(claims).length;
+    spinBtn.disabled = spinning || busy || mode === "connecting" || !canWrite || left === 0;
+    shuffleBtn.disabled = spinning || left < 2;
+    if (mode === "connecting") note.textContent = "กำลังโหลดของรางวัล…";
+    else if (!canWrite) note.textContent = "ลิงก์นี้เปิดให้ดูอย่างเดียว ขอสิทธิ์ Contributor จากเจ้าของหน้าเพื่อหมุน";
+    else if (left === 0) note.textContent = "ของรางวัลหมดแล้ว";
+    else if (!spinning && Date.now() > noteHold) note.textContent = mode === "local" ? "โหมดเครื่องเดียว: ผลการสุ่มเก็บไว้ในเบราว์เซอร์นี้เท่านั้น" : "";
+  }
+
+  function renderAll() {
+    if (!spinning) shownClaims = claims;
+    draw(); renderBoard(); refreshControls();
+  }
+  function setStatus(kind, text) { statusEl.className = "status " + kind; statusText.textContent = text; }
+
+  // ---------- Claiming / undo ----------
+  async function claimShared() {
+    for (const id of shuffled(available(claims))) {
+      const ref = db.doc("claims/" + id);
+      const lease = await ref.acquire({ holder: tabId, ttlMs: 5000 });
+      if (!lease.acquired) continue;
+      const snap = await ref.get();
+      const d = snap.exists ? snap.data() : null;
+      if (d && d.by) continue;                       // someone got it first
+      await ref.set({ by: myId || "anon", at: Date.now(), name: byId[id].name });
+      return id;
+    }
+    return null;
+  }
+  function claimLocal() {
+    const ids = available(claims);
+    if (!ids.length) return null;
+    const id = ids[Math.floor(Math.random() * ids.length)];
+    claims = { ...claims, [id]: { by: "local", at: Date.now(), name: byId[id].name } };
+    rawClaims = claims; store.set("wheel-local-claims", claims);
+    return id;
+  }
+
+  async function undo(id) {
+    if (busy) return;
+    busy = true; renderBoard(); refreshControls();
+    try {
+      if (mode === "shared") await db.doc("claims/" + id).delete();
+      const next = { ...claims }; delete next[id]; claims = next;
+      const raw = { ...rawClaims }; delete raw[id]; rawClaims = raw;
+      if (mode === "local") store.set("wheel-local-claims", claims);
+      say(`คืน “${byId[id].name}” เข้าวงล้อแล้ว`); sfx.undo();
+      if (lastWin === id) lastWin = null;
+    } catch (e) {
+      note.textContent = "คืนของไม่สำเร็จ ลองอีกครั้ง";
+    }
+    busy = false; confirmUndo = null; renderAll();
+  }
+
+  // ---------- Spin ----------
+  function animateTo(targetId) {
+    return new Promise(resolve => {
+      const ids = available(shownClaims);
+      const seg = Math.PI * 2 / ids.length;
+      const idx = ids.indexOf(targetId);
+      const jitter = (Math.random() - 0.5) * seg * 0.7;
+      const want = -((idx + 0.5) * seg + jitter);
+      const TAU = Math.PI * 2;
+      const delta = ((want - rotation) % TAU + TAU) % TAU;
+      const turns = reduceMotion ? 1 : 6 + Math.floor(Math.random() * 2);
+      const start = rotation, end = rotation + delta + turns * TAU;
+      const dur = reduceMotion ? 900 : 6000 + Math.random() * 1000;
+      const t0 = performance.now();
+      let lastSeg = -1;
+      const ptr = $("pointer");
+      lightsFast = true;
+      function frame(now) {
+        const t = Math.min(1, (now - t0) / dur);
+        // wind-up back a little, then fast, then a long ease-out
+        const e = t < 0.06 ? -0.004 * Math.sin(t / 0.06 * Math.PI) : 1 - Math.pow(1 - (t - 0.06) / 0.94, 4);
+        rotation = start + (end - start) * e;
+        lightPhase = Math.floor(now / 70);
+        draw();
+        const s = Math.floor(((-rotation % TAU) + TAU) % TAU / seg);
+        if (s !== lastSeg) { lastSeg = s; ptr.classList.remove("tick"); void ptr.offsetWidth; ptr.classList.add("tick"); if (t > 0.04) sfx.tick(1 - t); }
+        if (t < 1) requestAnimationFrame(frame); else { rotation = rotation % TAU; lightsFast = false; resolve(); }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  async function flashWinner(id) {
+    highlightId = id;
+    wheelBox.classList.add("won");
+    const t0 = performance.now();
+    await new Promise(res => {
+      (function f(now) { lightPhase = Math.floor(now / 120); draw(); if (now - t0 < (reduceMotion ? 300 : 1400)) requestAnimationFrame(f); else res(); })(t0);
+    });
+    wheelBox.classList.remove("won");
+    highlightId = null;
+  }
+
+  spinBtn.addEventListener("click", async () => {
+    if (spinning || busy) return;
+    spinning = true; shownClaims = claims; confirmUndo = null; refreshControls(); renderBoard();
+    sfx.startSpin();
+    wheelBox.classList.add("spinning");
+    note.textContent = "กำลังจับรางวัล…";
+    let id = null;
+    try {
+      id = mode === "shared" ? await claimShared() : claimLocal();
+    } catch (e) {
+      spinning = false; wheelBox.classList.remove("spinning"); sfx.stopRoll(); sfx.error();
+      if (e && e.code === "invalid_argument") canWrite = false;
+      note.textContent = canWrite ? "หมุนไม่สำเร็จ ลองกดอีกครั้ง" : "";
+      renderAll(); return;
+    }
+    if (!id) { spinning = false; wheelBox.classList.remove("spinning"); sfx.stopRoll(); note.textContent = "ของรางวัลหมดแล้ว"; renderAll(); return; }
+    note.textContent = "";
+    await animateTo(id);
+    wheelBox.classList.remove("spinning");
+    sfx.win();
+    await flashWinner(id);
+    lastWin = id;
+    claims = { ...claims, [id]: claims[id] || { by: myId, at: Date.now(), name: byId[id].name } };
+    $("prizeName").textContent = byId[id].name;
+    $("prizeSw").style.background = COLORS[byId[id].name];
+    $("modalUndo").disabled = false;
+    $("overlay").hidden = false;
+    $("closeBtn").focus();
+    celebrate(COLORS[byId[id].name]);
+  });
+
+  function closeModal() {
+    $("overlay").hidden = true;
+    spinning = false; rotation = 0;
+    renderAll(); spinBtn.focus();
+  }
+  $("closeBtn").addEventListener("click", closeModal);
+  $("modalUndo").addEventListener("click", async () => {
+    const id = lastWin; if (!id) return closeModal();
+    $("modalUndo").disabled = true;
+    $("overlay").hidden = true; spinning = false; rotation = 0;
+    fx.stop();
+    await undo(id);
+    spinBtn.focus();
+  });
+
+  shuffleBtn.addEventListener("click", async () => {
+    if (spinning) return;
+    const vis = available(claims);
+    const before = vis.join();
+    let arranged = spreadOrder(vis);
+    for (let k = 0; k < 5 && arranged.join() === before; k++) arranged = spreadOrder(vis);
+    // claimed items keep their place at the end; they come back there if returned
+    order = arranged.concat(order.filter(id => claims[id]));
+    store.set("wheel-order-v2", order);
+    // quick whirl
+    sfx.whoosh();
+    shuffleBtn.disabled = true;
+    const start = rotation, t0 = performance.now(), dur = reduceMotion ? 1 : 700;
+    await new Promise(res => {
+      (function f(now) {
+        const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+        rotation = start + e * Math.PI * 2; lightPhase = Math.floor(now / 60); draw();
+        if (t < 1) requestAnimationFrame(f); else res();
+      })(t0);
+    });
+    rotation = 0;
+    const c = clashes(arranged);
+    renderAll();
+    say(c === 0 ? "สลับแล้ว ของชนิดเดียวกันไม่อยู่ติดกัน" : "สลับแล้ว (ของที่เหลือบางชนิดมีมากจนต้องอยู่ติดกัน)");
+  });
+
+  // ---------- Sound effects (synthesised with Web Audio, no files) ----------
+  const sfx = (() => {
+    let ac = null, master = null, noiseBuf = null, roll = null, lastTick = 0, lastBoom = 0;
+    let vol = Number(store.get("wheel-vol")); if (store.get("wheel-vol") === null || !Number.isFinite(vol)) vol = 70;
+    let muted = !!store.get("wheel-muted");
+    function level() { return muted ? 0 : Math.pow(vol / 100, 2) * 0.9; }
+    function ctxReady() {
+      if (!ac) {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+        try { ac = new AC(); } catch (e) { return null; }
+        master = ac.createGain(); master.gain.value = level();
+        const comp = ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);
+        noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+        const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ac.state === "suspended") ac.resume().catch(() => {});
+      return ac;
+    }
+    function out(pan) {
+      if (pan === undefined || !ac.createStereoPanner) return master;
+      const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); p.connect(master); return p;
+    }
+    function tone(freq, t, dur, { type = "triangle", gain = 0.3, to = null, attack = 0.005, dest } = {}) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(dest || master); o.start(t); o.stop(t + dur + 0.05);
+    }
+    function noise(t, dur, { gain = 0.3, type = "bandpass", freq = 1500, q = 1, to = null, attack = 0.002, dest } = {}) {
+      const src = ac.createBufferSource(); src.buffer = noiseBuf;
+      const f = ac.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
+      if (to) f.frequency.exponentialRampToValueAtTime(to, t + dur);
+      const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(dest || master);
+      src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
+    }
+    const api = {
+      get volume() { return vol; }, get muted() { return muted; },
+      setVolume(v) { vol = v; if (v > 0 && muted) muted = false; store.set("wheel-vol", vol); store.set("wheel-muted", muted); api.apply(); },
+      toggleMute() { muted = !muted; store.set("wheel-muted", muted); api.apply(); },
+      apply() { if (master) master.gain.setTargetAtTime(level(), ac.currentTime, 0.03); },
+      unlock() { ctxReady(); },
+      on() { return !muted && vol > 0 && ctxReady(); },
+      tick(speed = 0.5) {
+        if (!api.on()) return; const now = ac.currentTime; if (now - lastTick < 0.022) return; lastTick = now;
+        tone(900 + speed * 900, now, 0.045, { type: "square", gain: 0.12 });
+        noise(now, 0.03, { gain: 0.12, freq: 4000, q: 2 });
+      },
+      startSpin() {
+        if (!api.on()) return; const t = ac.currentTime;
+        noise(t, 0.7, { gain: 0.35, type: "bandpass", freq: 300, to: 3000, q: 0.8, attack: 0.25 });
+        tone(110, t, 0.6, { type: "sawtooth", gain: 0.08, to: 330, attack: 0.2 });
+        api.stopRoll();
+        const started = performance.now();
+        roll = setInterval(() => {
+          if (!api.on()) return; const k = Math.min(1, (performance.now() - started) / 5500);
+          const n = ac.currentTime;
+          noise(n, 0.06, { gain: 0.06 + k * 0.16, freq: 1800, q: 0.7 });
+          if (Math.random() < 0.35) tone(140, n, 0.08, { type: "sine", gain: 0.05 + k * 0.1, to: 60 });
+        }, 55);
+      },
+      stopRoll() { if (roll) { clearInterval(roll); roll = null; } },
+      win() {
+        api.stopRoll(); if (!api.on()) return; const t = ac.currentTime;
+        noise(t, 1.8, { gain: 0.35, type: "highpass", freq: 5000, q: 0.3, attack: 0.003 });
+        tone(65, t, 0.5, { type: "sine", gain: 0.5, to: 40 });
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => { tone(f, t + 0.12 + i * 0.11, 0.22, { type: "sawtooth", gain: 0.09 }); tone(f, t + 0.12 + i * 0.11, 0.25, { type: "triangle", gain: 0.16 }); });
+        const c = t + 0.6;
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach(f => {
+          tone(f, c, 1.4, { type: "triangle", gain: 0.12, attack: 0.02 });
+          tone(f * 1.003, c, 1.4, { type: "sawtooth", gain: 0.035, attack: 0.02 });
+        });
+        for (let i = 0; i < 6; i++) tone(2093 + i * 260, c + 0.1 + i * 0.07, 0.25, { type: "sine", gain: 0.05 });
+      },
+      whistle(pan) {
+        if (!api.on()) return; const t = ac.currentTime;
+        tone(500 + Math.random() * 300, t, 0.6, { type: "sine", gain: 0.035, to: 1600 + Math.random() * 600, attack: 0.05, dest: out(pan) });
+      },
+      boom(pan) {
+        if (!api.on()) return; const t = ac.currentTime; if (t - lastBoom < 0.06) return; lastBoom = t;
+        const d = out(pan);
+        tone(90 + Math.random() * 40, t, 0.6, { type: "sine", gain: 0.45, to: 35, dest: d });
+        noise(t, 0.5, { gain: 0.4, type: "lowpass", freq: 1800, to: 200, q: 0.5, dest: d });
+        for (let i = 0; i < 7; i++) noise(t + 0.15 + Math.random() * 0.6, 0.04, { gain: 0.08, freq: 3000 + Math.random() * 4000, q: 3, dest: d });
+      },
+      whoosh() {
+        if (!api.on()) return; const t = ac.currentTime;
+        noise(t, 0.55, { gain: 0.3, type: "bandpass", freq: 400, to: 4000, q: 1, attack: 0.15 });
+        for (let i = 0; i < 6; i++) tone(700 + i * 120, t + 0.06 * i, 0.05, { type: "square", gain: 0.05 });
+      },
+      add() { if (!api.on()) return; const t = ac.currentTime; tone(660, t, 0.12, { gain: 0.2 }); tone(990, t + 0.09, 0.18, { gain: 0.2 }); },
+      undo() { if (!api.on()) return; const t = ac.currentTime; tone(700, t, 0.12, { gain: 0.2 }); tone(440, t + 0.1, 0.2, { gain: 0.2 }); },
+      error() { if (!api.on()) return; const t = ac.currentTime; tone(220, t, 0.25, { type: "square", gain: 0.08 }); }
+    };
+    return api;
+  })();
+  (function () {
+    const box = $("sound"), btn = $("muteBtn"), range = $("vol");
+    function sync() {
+      const off = sfx.muted || sfx.volume === 0;
+      box.classList.toggle("muted", off);
+      btn.setAttribute("aria-label", off ? "เปิดเสียง" : "ปิดเสียง");
+      range.value = String(sfx.muted ? 0 : sfx.volume);
+    }
+    btn.addEventListener("click", () => { sfx.unlock(); if (sfx.volume === 0) sfx.setVolume(60); else sfx.toggleMute(); sync(); sfx.add(); });
+    range.addEventListener("input", () => { sfx.unlock(); sfx.setVolume(Number(range.value)); sync(); });
+    range.addEventListener("change", () => sfx.tick(0.6));
+    sync();
+  })();
+  document.addEventListener("pointerdown", () => sfx.unlock(), { once: true });
+
+  // ---------- Fireworks + confetti ----------
+  const fxCanvas = $("fx"), fctx = fxCanvas.getContext("2d");
+  const fx = (() => {
+    let parts = [], rockets = [], running = false, until = 0, palette = [];
+    function resize() {
+      const d = window.devicePixelRatio || 1;
+      fxCanvas.width = innerWidth * d; fxCanvas.height = innerHeight * d;
+      fctx.setTransform(d, 0, 0, d, 0, 0);
+    }
+    function burst(x, y) {
+      sfx.boom((x / innerWidth) * 1.6 - 0.8);
+      const n = 70 + Math.floor(Math.random() * 40);
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      const ring = Math.random() < 0.35;
+      for (let i = 0; i < n; i++) {
+        const a = Math.PI * 2 * i / n + Math.random() * 0.1;
+        const sp = ring ? 5 : 1.5 + Math.random() * 5;
+        parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.012 + Math.random() * 0.012,
+                     col: Math.random() < 0.25 ? "#fff6d0" : col, size: 2 + Math.random() * 1.5, kind: "spark" });
+      }
+    }
+    function launch() {
+      const lx = 0.15 + Math.random() * 0.7; sfx.whistle(lx * 1.6 - 0.8);
+      rockets.push({ x: innerWidth * lx, y: innerHeight + 10,
+                     vx: (Math.random() - 0.5) * 2, vy: -(innerHeight / 60) - Math.random() * 4,
+                     ty: innerHeight * (0.12 + Math.random() * 0.35) });
+    }
+    function confetti() {
+      for (let i = 0; i < 140; i++) parts.push({
+        x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.5,
+        vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3, life: 1, decay: 0.0035,
+        col: palette[i % palette.length], w: 6 + Math.random() * 6, h: 3 + Math.random() * 4,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, kind: "paper" });
+    }
+    let nextLaunch = 0;
+    function step(now) {
+      fctx.globalCompositeOperation = "source-over";
+      fctx.clearRect(0, 0, innerWidth, innerHeight);
+      if (now < until && now > nextLaunch) { launch(); if (Math.random() < 0.4) launch(); nextLaunch = now + 260 + Math.random() * 300; }
+      rockets = rockets.filter(r => {
+        r.x += r.vx; r.y += r.vy; r.vy += 0.12;
+        fctx.fillStyle = "#fff3c4"; fctx.beginPath(); fctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2); fctx.fill();
+        parts.push({ x: r.x, y: r.y, vx: (Math.random() - .5) * .5, vy: 1, life: .6, decay: .04, col: "#ffcc66", size: 1.5, kind: "spark" });
+        if (r.y <= r.ty || r.vy >= 0) { burst(r.x, r.y); return false; }
+        return true;
+      });
+      fctx.globalCompositeOperation = "lighter";
+      parts = parts.filter(p => {
+        p.life -= p.decay;
+        if (p.life <= 0 || p.y > innerHeight + 30) return false;
+        if (p.kind === "spark") {
+          p.vx *= 0.97; p.vy = p.vy * 0.97 + 0.06; p.x += p.vx; p.y += p.vy;
+          fctx.globalAlpha = Math.max(0, p.life);
+          fctx.fillStyle = p.col; fctx.beginPath(); fctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); fctx.fill();
+        } else {
+          fctx.globalCompositeOperation = "source-over";
+          p.x += p.vx + Math.sin(now / 300 + p.rot) * 0.6; p.y += p.vy; p.rot += p.vr;
+          fctx.globalAlpha = Math.min(1, p.life * 2);
+          fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot); fctx.scale(1, Math.cos(now / 160 + p.rot));
+          fctx.fillStyle = p.col; fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); fctx.restore();
+          fctx.globalCompositeOperation = "lighter";
+        }
+        return true;
+      });
+      fctx.globalAlpha = 1;
+      if (parts.length || rockets.length || now < until) requestAnimationFrame(step);
+      else { running = false; fctx.clearRect(0, 0, innerWidth, innerHeight); }
+    }
+    return {
+      play(color) {
+        palette = [color, "#ffd166", "#ef476f", "#06d6a0", "#4cc9f0", "#f8f9fa", color];
+        resize();
+        if (reduceMotion) { confetti(); parts = parts.slice(0, 40); }
+        else { until = performance.now() + 3200; nextLaunch = 0; burst(innerWidth / 2, innerHeight * 0.3); confetti(); }
+        if (!running) { running = true; requestAnimationFrame(step); }
+      },
+      stop() { parts = []; rockets = []; until = 0; }
+    };
+  })();
+  function celebrate(color) { fx.play(color); }
+
+  // ---------- Drawer ----------
+  function setBadge(id, btnId, v) {
+    const el = $(id); if (el.textContent === v) return;
+    const first = el.textContent === "–" || el.dataset.init !== "1";
+    el.textContent = v; el.dataset.init = "1";
+    if (!first) { const b = $(btnId); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+  }
+  let lastOpener = null;
+  function showTab(which) {
+    const log = which === "log";
+    $("tabStock").setAttribute("aria-selected", String(!log)); $("tabLog").setAttribute("aria-selected", String(log));
+    $("paneStock").hidden = log; $("paneLog").hidden = !log;
+    store.set("wheel-tab", which);
+  }
+  function openDrawer(which, opener) {
+    lastOpener = opener; showTab(which);
+    const d = $("drawer"), sc = $("scrim");
+    d.inert = false; sc.hidden = false;
+    requestAnimationFrame(() => { d.classList.add("open"); sc.classList.add("open"); });
+    $(which === "log" ? "tabLog" : "tabStock").focus();
+  }
+  function closeDrawer() {
+    const d = $("drawer"), sc = $("scrim");
+    d.classList.remove("open"); sc.classList.remove("open"); d.inert = true;
+    setTimeout(() => { if (!d.classList.contains("open")) sc.hidden = true; }, 300);
+    if (lastOpener) lastOpener.focus();
+  }
+  $("openStock").addEventListener("click", e => openDrawer("stock", e.currentTarget));
+  $("openLog").addEventListener("click", e => openDrawer("log", e.currentTarget));
+  $("tabStock").addEventListener("click", () => showTab("stock"));
+  $("tabLog").addEventListener("click", () => showTab("log"));
+  $("closeDrawer").addEventListener("click", closeDrawer);
+  $("scrim").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && $("drawer").classList.contains("open")) closeDrawer(); });
+
+  // ---------- Owner reset ----------
+  $("resetBtn").addEventListener("click", () => { $("resetBtn").hidden = true; $("resetYes").hidden = false; $("resetNo").hidden = false; });
+  $("resetNo").addEventListener("click", () => { $("resetBtn").hidden = false; $("resetYes").hidden = true; $("resetNo").hidden = true; });
+  $("resetYes").addEventListener("click", async () => {
+    $("resetYes").disabled = true;
+    try {
+      if (mode === "shared") { for (const id of new Set([...ITEMS.map(it => it.id), ...Object.keys(rawClaims)])) await db.doc("claims/" + id).delete(); }
+      claims = {}; rawClaims = {}; if (mode === "local") store.set("wheel-local-claims", claims);
+    } catch (e) { note.textContent = "รีเซ็ตไม่สำเร็จ ลองอีกครั้ง"; }
+    $("resetYes").disabled = false; $("resetNo").click(); renderAll();
+  });
+
+  // ---------- Adding / removing prizes (owner & editors) ----------
+  function recomputeClaims() {
+    const next = {};
+    for (const [id, v] of Object.entries(rawClaims)) if (v && v.by && byId[id]) next[id] = v;
+    claims = next;
+  }
+  async function addPrizes(name, qty) {
+    name = String(name || "").trim().slice(0, 40);
+    qty = Math.max(1, Math.min(50, Math.floor(Number(qty) || 1)));
+    if (!name || busy) return false;
+    busy = true; renderBoard(); refreshControls();
+    const base = Date.now();
+    const made = [];
+    for (let k = 0; k < qty; k++) made.push({ id: "p" + base.toString(36) + "-" + k + Math.random().toString(36).slice(2, 6), name, at: base + k });
+    let ok = true;
+    try {
+      if (mode === "shared") { for (const it of made) await db.collection("prizes").doc(it.id).set({ name: it.name, at: it.at }); }
+      else { setItems(ITEMS.concat(made)); store.set("wheel-local-prizes", ITEMS); }
+      say(`เพิ่ม “${name}” ${qty} ชิ้นแล้ว`); sfx.add();
+    } catch (e) { ok = false; say(e && e.code === "quota_exceeded" ? "เพิ่มไม่ได้ ที่เก็บข้อมูลเต็ม" : "เพิ่มของไม่สำเร็จ ลองอีกครั้ง"); }
+    busy = false; recomputeClaims(); renderAll();
+    return ok;
+  }
+  async function removeOne(name) {
+    if (busy) return;
+    const cand = ITEMS.filter(it => it.name === name && !claims[it.id]).pop();
+    if (!cand) return;
+    busy = true; renderBoard(); refreshControls();
+    try {
+      if (mode === "shared") { await db.doc("prizes/" + cand.id).delete(); await db.doc("claims/" + cand.id).delete(); }
+      else { setItems(ITEMS.filter(it => it.id !== cand.id)); store.set("wheel-local-prizes", ITEMS); }
+      say(`ลด “${name}” 1 ชิ้นแล้ว`);
+    } catch (e) { say("ลดจำนวนไม่สำเร็จ ลองอีกครั้ง"); }
+    busy = false; recomputeClaims(); renderAll();
+  }
+  $("manage").addEventListener("submit", async e => {
+    e.preventDefault();
+    const ok = await addPrizes($("addName").value, $("addQty").value);
+    if (ok) { $("addName").value = ""; $("addQty").value = "1"; $("addName").focus(); }
+  });
+
+  // ---------- Modes ----------
+  function startLocal(reason) {
+    mode = "local"; canWrite = true; isOwner = true; isAdmin = true;
+    const saved = store.get("wheel-local-prizes");
+    setItems(Array.isArray(saved) && saved.every(it => it && it.id && it.name) ? saved : DEFAULT_ITEMS);
+    rawClaims = store.get("wheel-local-claims") || {}; recomputeClaims();
+    setStatus("warn", reason);
+    $("admin").hidden = false;
+    renderAll();
+  }
+
+  async function startShared() {
+    try { user = await window.claude.use("user"); } catch (e) { user = null; }
+    try { db = await window.claude.use("db"); } catch (e) { db = null; }
+    if (!db) { startLocal("ไม่ได้เชื่อมต่อ ใช้โหมดเครื่องเดียว"); return; }
+    if (user) {
+      try { myId = await user.id(); } catch (e) {}
+      try { isOwner = !!(await user.isOwner()); if (isOwner) $("admin").hidden = false; } catch (e) {}
+      try { isAdmin = isOwner || !!(await user.canEdit()); } catch (e) { isAdmin = isOwner; }
+      try { const w = await user.can("data.write"); if (w === false) canWrite = false; } catch (e) {}
+    }
+    const timer = setTimeout(() => setStatus("warn", "ยังเชื่อมต่อไม่ได้ ข้อมูลอาจไม่ล่าสุด"), 10000);
+    let gotPrizes = false, gotClaims = false;
+    const ready = snap => {
+      if (gotPrizes && gotClaims && mode === "connecting") mode = "shared";
+      if (!snap.metadata.fromCache && gotPrizes && gotClaims) { clearTimeout(timer); setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน"); }
+      recomputeClaims(); renderAll();
+    };
+    const fail = () => {
+      clearTimeout(timer);
+      if (mode === "connecting") startLocal("เชื่อมต่อไม่ได้ ใช้โหมดเครื่องเดียว");
+      else setStatus("warn", "การเชื่อมต่อหลุด รีเฟรชหน้าเพื่อดูข้อมูลล่าสุด");
+    };
+    db.collection("prizes").onSnapshot(snap => {
+      const list = [];
+      snap.docs.forEach(d => { const v = d.data(); if (v && typeof v.name === "string" && v.name.trim()) list.push({ id: d.id, name: v.name.trim().slice(0, 40), at: Number(v.at) || 0 }); });
+      setItems(list); gotPrizes = true; ready(snap);
+    }, fail);
+    db.collection("claims").onSnapshot(snap => {
+      const next = {};
+      snap.docs.forEach(d => { const v = d.data(); if (v && v.by) next[d.id] = v; });
+      rawClaims = next; gotClaims = true; ready(snap);
+    }, () => {
+      clearTimeout(timer);
+      if (mode === "connecting") startLocal("เชื่อมต่อไม่ได้ ใช้โหมดเครื่องเดียว");
+      else setStatus("warn", "การเชื่อมต่อหลุด รีเฟรชหน้าเพื่อดูข้อมูลล่าสุด");
+    });
+  }
+
+  // first paint
+  renderAll();
+  window.addEventListener("resize", () => draw());
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw());
+  (async () => {
+    for (let k = 0; k < 10 && !(window.claude && typeof window.claude.use === "function"); k++) await sleep(100);
+    if (window.claude && typeof window.claude.use === "function") startShared();
+    else startLocal("เปิดนอก Claude: ผลเก็บในเครื่องนี้");
+  })();
+})();
+</script>
+
+</body>
+</html>
