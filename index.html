@@ -544,6 +544,15 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       try { names = ids.length ? await user.profiles(ids) : {}; } catch (e) {}
     }
     const log = $("log"); log.textContent = "";
+    const pend = Object.values(pendingClaims);
+    pend.forEach(c => {
+      const li = document.createElement("li");
+      const who = document.createElement("span"); who.className = "who";
+      who.textContent = mode === "supa" ? (c.who || "ผู้ร่วมสนุก") : ((names[c.by] && names[c.by].name) || "ผู้ร่วมสนุก");
+      const what = document.createElement("span"); what.className = "what"; what.textContent = "กำลังหมุน…"; what.style.color = "var(--muted)";
+      li.append(who, what, document.createElement("span")); log.appendChild(li);
+    });
+    if (pend.length) $("logEmpty").hidden = true;
     won.forEach(([id, c]) => {
       const li = document.createElement("li");
       if (seenLog && !seenLog.has(id)) li.className = "fresh";
@@ -588,6 +597,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     else if (!canWrite) note.textContent = "ลิงก์นี้เปิดให้ดูอย่างเดียว ขอสิทธิ์ Contributor จากเจ้าของหน้าเพื่อหมุน";
     else if (left === 0) note.textContent = "ของรางวัลหมดแล้ว";
     else if (needName && !spinning && Date.now() > noteHold) note.textContent = "พิมพ์ชื่อก่อน แล้วกดหมุนวงล้อ";
+    else if (!spinning && Date.now() > noteHold && Object.keys(pendingClaims).length) {
+      const c = Object.values(pendingClaims)[0];
+      note.textContent = "🎡 " + (mode === "supa" ? (c.who || "มีคน") : ((names[c.by] && names[c.by].name) || "มีคน")) + " กำลังหมุน…";
+    }
     else if (!spinning && Date.now() > noteHold) note.textContent = mode === "local" ? "โหมดเครื่องเดียว: ผลการสุ่มเก็บไว้ในเบราว์เซอร์นี้เท่านั้น" : "";
   }
 
@@ -607,6 +620,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       const d = snap.exists ? snap.data() : null;
       if (d && d.by) continue;                       // someone got it first
       await ref.set({ by: myId || "anon", at: Date.now(), name: byId[id].name });
+      firstSeen[id] = 0;
       return id;
     }
     return null;
@@ -616,7 +630,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     if (!ids.length) return null;
     const id = ids[Math.floor(Math.random() * ids.length)];
     claims = { ...claims, [id]: { by: "local", at: Date.now(), name: byId[id].name } };
-    rawClaims = claims; store.set("wheel-local-claims", claims);
+    rawClaims = claims; store.set("wheel-local-claims", claims); firstSeen[id] = 0;
     return id;
   }
 
@@ -1003,10 +1017,28 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   });
 
   // ---------- Adding / removing prizes (owner & editors) ----------
+  // Someone else's draw stays hidden ("กำลังหมุน…") until their wheel has had time to stop,
+  // so other screens don't spoil the result.
+  const REVEAL_MS = 8000;
+  const firstSeen = {};     // itemId -> local time we first saw the claim (0 = show at once)
+  let pendingClaims = {}, revealTimer = null;
   function recomputeClaims() {
-    const next = {};
-    for (const [id, v] of Object.entries(rawClaims)) if (v && v.by && byId[id]) next[id] = v;
-    claims = next;
+    const next = {}, pend = {}, now = Date.now();
+    const live = mode !== "connecting";
+    for (const id of Object.keys(firstSeen)) if (!rawClaims[id]) delete firstSeen[id];
+    let soonest = Infinity;
+    for (const [id, v] of Object.entries(rawClaims)) {
+      if (!(v && v.by && byId[id])) continue;
+      if (!(id in firstSeen)) firstSeen[id] = (live && v.by !== myId) ? now : 0;
+      const until = firstSeen[id] ? firstSeen[id] + REVEAL_MS : 0;
+      if (until > now) { pend[id] = v; soonest = Math.min(soonest, until); }
+      else next[id] = v;
+    }
+    const revealed = Object.keys(pendingClaims).filter(id => next[id]);
+    claims = next; pendingClaims = pend;
+    clearTimeout(revealTimer);
+    if (soonest < Infinity) revealTimer = setTimeout(() => { recomputeClaims(); renderAll(); }, soonest - now + 30);
+    if (revealed.length && !spinning) sfx.add();
   }
   async function addPrizes(name, qty) {
     name = String(name || "").trim().slice(0, 40);
@@ -1069,6 +1101,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     const timer = setTimeout(() => setStatus("warn", "ยังเชื่อมต่อไม่ได้ ข้อมูลอาจไม่ล่าสุด"), 10000);
     let gotPrizes = false, gotClaims = false;
     const ready = snap => {
+      if (mode === "connecting") recomputeClaims();   // claims already there on load show at once
       if (gotPrizes && gotClaims && mode === "connecting") mode = "shared";
       if (!snap.metadata.fromCache && gotPrizes && gotClaims) { clearTimeout(timer); setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน"); }
       recomputeClaims(); renderAll();
@@ -1101,6 +1134,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     const row = Array.isArray(data) ? data[0] : data;
     if (!row || !row.item_id) { await supaRefresh(); return null; }
     if (!byId[row.item_id]) await supaRefresh();
+    firstSeen[row.item_id] = 0;
     rawClaims = { ...rawClaims, [row.item_id]: { by: myId, who: playerName, at: Date.now(), name: row.name } };
     recomputeClaims();
     return row.item_id;
