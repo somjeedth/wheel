@@ -199,6 +199,11 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .card .prize { font-family: var(--font-display); font-size: clamp(30px, 8vw, 40px); font-weight: 600; color: var(--ink); margin: 4px 0 16px; line-height: 1.25; animation: prizeIn .7s .15s both cubic-bezier(.2,1.6,.4,1); }
 @keyframes prizeIn { from { transform: translateY(14px) scale(.6); opacity: 0; } }
 .card .prize-sw { display: inline-block; width: 20px; height: 20px; border-radius: 6px; margin-right: 10px; vertical-align: middle; }
+.field { font: inherit; width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); text-align: center; font-size: 18px; }
+.field:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.card .err { color: var(--accent); font-size: 13px; min-height: 1.4em; }
+.admin input { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 140px; }
+.admin form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .linkish { background: none; border: 0; color: var(--muted); font-size: 13px; text-decoration: underline; padding: 8px; margin-top: 4px; }
 .linkish:hover:not(:disabled) { background: none; color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
@@ -219,6 +224,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
         </button>
         <input type="range" id="vol" min="0" max="100" step="1" value="70" aria-label="ระดับเสียง">
       </div>
+      <button class="navbtn" type="button" id="whoBtn" hidden title="เปลี่ยนชื่อ">คุณ: <span id="whoName"></span></button>
       <button class="navbtn" type="button" id="openStock" aria-controls="drawer">ของที่เหลือ <b id="stockBadge">–</b></button>
       <button class="navbtn" type="button" id="openLog" aria-controls="drawer">ผลการสุ่ม <b id="logBadge">0</b></button>
     </nav>
@@ -270,10 +276,15 @@ button:disabled { opacity: .45; cursor: not-allowed; }
         <p class="hint" id="logHint" hidden>กดผิด? กด “คืนของ” ที่รายการของคุณ ของชิ้นนั้นจะกลับเข้าวงล้อ</p>
       </div>
       <div class="admin" id="admin" hidden>
-        <span>สำหรับเจ้าของหน้า:</span>
+        <span id="adminLabel">สำหรับเจ้าของหน้า:</span>
+        <form id="adminLogin" hidden autocomplete="off">
+          <input type="password" id="adminPin" placeholder="รหัสผู้ดูแล" aria-label="รหัสผู้ดูแล">
+          <button type="submit">เข้าโหมดผู้ดูแล</button>
+        </form>
         <button id="resetBtn" type="button">รีเซ็ตวงล้อ</button>
         <button id="resetYes" class="danger" type="button" hidden>ยืนยัน ล้างผลทั้งหมด</button>
         <button id="resetNo" type="button" hidden>ยกเลิก</button>
+        <button id="adminLogout" type="button" hidden>ออกจากโหมดผู้ดูแล</button>
       </div>
   </div>
 </aside>
@@ -286,10 +297,27 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     <button class="linkish" id="modalUndo" type="button">กดผิด คืนของชิ้นนี้เข้าวงล้อ</button>
   </div>
 </div>
+<div class="overlay" id="nameOverlay" hidden>
+  <form class="card" id="nameForm" autocomplete="off" aria-labelledby="nameTitle">
+    <p id="nameTitle">ใส่ชื่อของคุณ เพื่อให้ทุกคนเห็นว่าใครได้อะไร</p>
+    <input class="field" id="playerName" maxlength="40" placeholder="ชื่อเล่น หรือ ชื่อ-นามสกุล" required>
+    <p class="err" id="nameErr"></p>
+    <button class="btn-spin" type="submit">ตกลง</button>
+    <button class="linkish" type="button" id="nameCancel">ยกเลิก</button>
+  </form>
+</div>
 <canvas id="fx" aria-hidden="true"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
 <script>
 (function () {
+  // ---------- Supabase (used when the page is hosted outside Claude, e.g. GitHub Pages) ----------
+  const SUPA = {
+    url: "https://bdijozhylqpqmazdtivq.supabase.co",
+    key: "sb_publishable_xD5X7AW4SL5INti1evVcxw_D-otWMy0"
+  };
+  let sb = null, adminPin = null, playerName = "";
+
   // ---------- Prize list ----------
   // Shared mode reads prizes from the db ("prizes" collection); this list only seeds the offline/local mode.
   const DEFAULT_NAMES = ["หมอนอิง","หมอนอิง","กระเป๋าเดินทาง","หมวก","กระเป๋าสะพาย",
@@ -462,6 +490,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   // ---------- Board ----------
   function canUndo(c) {
     if (mode === "local") return true;
+    if (mode === "supa") return isAdmin || (c.by && c.by === myId);
     if (!canWrite) return false;
     return isOwner || (c.by && c.by === myId);
   }
@@ -513,8 +542,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
       if (seenLog && !seenLog.has(id)) li.className = "fresh";
       const who = document.createElement("span"); who.className = "who";
       const isMe = c.by && c.by === myId;
-      const nm = mode === "local" ? "เครื่องนี้" : ((names[c.by] && names[c.by].name) || "ผู้ร่วมสนุก");
-      who.textContent = nm + (isMe && mode === "shared" ? " (คุณ)" : "");
+      const nm = mode === "local" ? "เครื่องนี้" : mode === "supa" ? (c.who || "ผู้ร่วมสนุก") : ((names[c.by] && names[c.by].name) || "ผู้ร่วมสนุก");
+      who.textContent = nm + (isMe && mode !== "local" ? " (คุณ)" : "");
       if (isMe) who.classList.add("me");
       const what = document.createElement("span"); what.className = "what"; what.textContent = byId[id].name;
       what.style.color = COLORS[byId[id].name];
@@ -585,6 +614,13 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     busy = true; renderBoard(); refreshControls();
     try {
       if (mode === "shared") await db.doc("claims/" + id).delete();
+      if (mode === "supa") {
+        const { data, error } = isAdmin
+          ? await sb.rpc("wheel_admin_unclaim", { p_pin: adminPin, p_item: id })
+          : await sb.rpc("wheel_unclaim", { p_item: id, p_player: myId });
+        if (error) throw error;
+        if (data === false) throw new Error("not yours");
+      }
       const next = { ...claims }; delete next[id]; claims = next;
       const raw = { ...rawClaims }; delete raw[id]; rawClaims = raw;
       if (mode === "local") store.set("wheel-local-claims", claims);
@@ -641,13 +677,14 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
   spinBtn.addEventListener("click", async () => {
     if (spinning || busy) return;
+    if (mode === "supa" && !playerName) { askName(true); return; }
     spinning = true; shownClaims = claims; confirmUndo = null; refreshControls(); renderBoard();
     sfx.startSpin();
     wheelBox.classList.add("spinning");
     note.textContent = "กำลังจับรางวัล…";
     let id = null;
     try {
-      id = mode === "shared" ? await claimShared() : claimLocal();
+      id = mode === "shared" ? await claimShared() : mode === "supa" ? await claimSupa() : claimLocal();
     } catch (e) {
       spinning = false; wheelBox.classList.remove("spinning"); sfx.stopRoll(); sfx.error();
       if (e && e.code === "invalid_argument") canWrite = false;
@@ -948,6 +985,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     $("resetYes").disabled = true;
     try {
       if (mode === "shared") { for (const id of new Set([...ITEMS.map(it => it.id), ...Object.keys(rawClaims)])) await db.doc("claims/" + id).delete(); }
+      if (mode === "supa") { const { error } = await sb.rpc("wheel_admin_reset", { p_pin: adminPin }); if (error) throw error; }
       claims = {}; rawClaims = {}; if (mode === "local") store.set("wheel-local-claims", claims);
     } catch (e) { note.textContent = "รีเซ็ตไม่สำเร็จ ลองอีกครั้ง"; }
     $("resetYes").disabled = false; $("resetNo").click(); renderAll();
@@ -970,6 +1008,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     let ok = true;
     try {
       if (mode === "shared") { for (const it of made) await db.collection("prizes").doc(it.id).set({ name: it.name, at: it.at }); }
+      else if (mode === "supa") { const { error } = await sb.rpc("wheel_admin_add", { p_pin: adminPin, p_name: name, p_qty: qty }); if (error) throw error; await supaRefresh(); }
       else { setItems(ITEMS.concat(made)); store.set("wheel-local-prizes", ITEMS); }
       say(`เพิ่ม “${name}” ${qty} ชิ้นแล้ว`); sfx.add();
     } catch (e) { ok = false; say(e && e.code === "quota_exceeded" ? "เพิ่มไม่ได้ ที่เก็บข้อมูลเต็ม" : "เพิ่มของไม่สำเร็จ ลองอีกครั้ง"); }
@@ -983,6 +1022,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     busy = true; renderBoard(); refreshControls();
     try {
       if (mode === "shared") { await db.doc("prizes/" + cand.id).delete(); await db.doc("claims/" + cand.id).delete(); }
+      else if (mode === "supa") { const { error } = await sb.rpc("wheel_admin_remove_one", { p_pin: adminPin, p_name: name }); if (error) throw error; await supaRefresh(); }
       else { setItems(ITEMS.filter(it => it.id !== cand.id)); store.set("wheel-local-prizes", ITEMS); }
       say(`ลด “${name}” 1 ชิ้นแล้ว`);
     } catch (e) { say("ลดจำนวนไม่สำเร็จ ลองอีกครั้ง"); }
@@ -1043,6 +1083,120 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     });
   }
 
+  // ---------- Supabase mode ----------
+  async function claimSupa() {
+    const { data, error } = await sb.rpc("wheel_claim", { p_player: myId, p_name: playerName });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || !row.item_id) { await supaRefresh(); return null; }
+    if (!byId[row.item_id]) await supaRefresh();
+    rawClaims = { ...rawClaims, [row.item_id]: { by: myId, who: playerName, at: Date.now(), name: row.name } };
+    recomputeClaims();
+    return row.item_id;
+  }
+
+  let refreshing = null, refreshAgain = false;
+  async function supaRefresh() {
+    if (refreshing) { refreshAgain = true; return refreshing; }
+    refreshing = (async () => {
+      do {
+        refreshAgain = false;
+        const [p, c] = await Promise.all([
+          sb.from("wheel_prizes").select("id,name,at").limit(1000),
+          sb.from("wheel_claims").select("item_id,player_id,player_name,at").limit(1000)
+        ]);
+        if (p.error || c.error) throw (p.error || c.error);
+        setItems(p.data.map(r => ({ id: r.id, name: r.name, at: Number(r.at) || 0 })));
+        const next = {};
+        c.data.forEach(r => { next[r.item_id] = { by: r.player_id, who: r.player_name, at: Number(r.at) || 0 }; });
+        rawClaims = next;
+      } while (refreshAgain);
+    })();
+    try { await refreshing; } finally { refreshing = null; }
+    recomputeClaims(); renderAll();
+  }
+
+  function showWho() {
+    $("whoBtn").hidden = mode !== "supa";
+    $("whoName").textContent = playerName || "ตั้งชื่อ";
+  }
+  let spinAfterName = false;
+  function askName(thenSpin) {
+    spinAfterName = !!thenSpin;
+    $("playerName").value = playerName; $("nameErr").textContent = "";
+    $("nameOverlay").hidden = false; $("playerName").focus();
+  }
+  $("whoBtn").addEventListener("click", () => askName(false));
+  $("nameCancel").addEventListener("click", () => { $("nameOverlay").hidden = true; spinAfterName = false; });
+  $("nameForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = $("playerName").value.trim().slice(0, 40);
+    if (!v) { $("nameErr").textContent = "กรุณาใส่ชื่อ"; return; }
+    playerName = v; store.set("wheel-player-name", v); showWho();
+    $("nameOverlay").hidden = true;
+    if (spinAfterName) { spinAfterName = false; spinBtn.click(); }
+  });
+
+  function showAdmin() {
+    if (mode !== "supa") { $("adminLogin").hidden = true; $("adminLogout").hidden = true; return; }
+    $("admin").hidden = false;
+    $("adminLabel").textContent = isAdmin ? "โหมดผู้ดูแล:" : "ผู้ดูแล:";
+    $("adminLogin").hidden = isAdmin;
+    $("resetBtn").hidden = !isAdmin; $("resetYes").hidden = true; $("resetNo").hidden = true;
+    $("adminLogout").hidden = !isAdmin;
+  }
+  async function checkPin(pin) {
+    const { data, error } = await sb.rpc("wheel_is_admin", { p_pin: pin });
+    return !error && data === true;
+  }
+  $("adminLogin").addEventListener("submit", async e => {
+    e.preventDefault();
+    const pin = $("adminPin").value.trim(); if (!pin) return;
+    const ok = await checkPin(pin);
+    if (!ok) { say("รหัสผู้ดูแลไม่ถูกต้อง"); sfx.error(); return; }
+    adminPin = pin; isAdmin = true; $("adminPin").value = "";
+    try { sessionStorage.setItem("wheel-admin-pin", pin); } catch (err) {}
+    say("เข้าโหมดผู้ดูแลแล้ว เพิ่ม/ลดของ และคืนของของทุกคนได้"); sfx.add();
+    showAdmin(); renderAll();
+  });
+  $("adminLogout").addEventListener("click", () => {
+    adminPin = null; isAdmin = false;
+    try { sessionStorage.removeItem("wheel-admin-pin"); } catch (err) {}
+    showAdmin(); renderAll();
+  });
+
+  async function startSupa() {
+    sb = window.supabase.createClient(SUPA.url, SUPA.key, { auth: { persistSession: false } });
+    myId = store.get("wheel-player-id");
+    if (typeof myId !== "string" || myId.length < 8) {
+      myId = (crypto.randomUUID ? crypto.randomUUID() : "p" + Math.random().toString(36).slice(2) + Date.now().toString(36));
+      store.set("wheel-player-id", myId);
+    }
+    playerName = String(store.get("wheel-player-name") || "");
+    canWrite = true; isOwner = false; isAdmin = false;
+    let pin = null; try { pin = sessionStorage.getItem("wheel-admin-pin"); } catch (e) {}
+    try {
+      await supaRefresh();
+    } catch (e) {
+      startLocal("เชื่อมต่อฐานข้อมูลไม่ได้ ใช้โหมดเครื่องเดียว"); return;
+    }
+    mode = "supa";
+    if (pin && await checkPin(pin)) { adminPin = pin; isAdmin = true; }
+    setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน");
+    showWho(); showAdmin(); renderAll();
+    let t = null;
+    const soon = () => { clearTimeout(t); t = setTimeout(() => supaRefresh().catch(() => {}), 150); };
+    sb.channel("wheel")
+      .on("postgres_changes", { event: "*", schema: "public", table: "wheel_prizes" }, soon)
+      .on("postgres_changes", { event: "*", schema: "public", table: "wheel_claims" }, soon)
+      .subscribe(status => {
+        if (status === "SUBSCRIBED") setStatus("live", "อัปเดตสด ทุกคนเห็นตรงกัน");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") setStatus("warn", "อัปเดตทุก 10 วินาที");
+      });
+    setInterval(() => { if (!document.hidden) supaRefresh().catch(() => setStatus("warn", "การเชื่อมต่อหลุด กำลังลองใหม่…")); }, 10000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) soon(); });
+  }
+
   // first paint
   renderAll();
   window.addEventListener("resize", () => draw());
@@ -1050,6 +1204,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   (async () => {
     for (let k = 0; k < 10 && !(window.claude && typeof window.claude.use === "function"); k++) await sleep(100);
     if (window.claude && typeof window.claude.use === "function") startShared();
+    else if (window.supabase && SUPA.url) startSupa();
     else startLocal("เปิดนอก Claude: ผลเก็บในเครื่องนี้");
   })();
 })();
