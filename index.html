@@ -204,6 +204,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .card .err { color: var(--accent); font-size: 13px; min-height: 1.4em; }
 .admin input { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 140px; }
 .admin form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.namebox { width: min(380px, 100%); display: grid; gap: 6px; justify-items: center; }
+.namebox label { font-size: 13px; color: var(--muted); }
+.namebox .field.need { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
 .linkish { background: none; border: 0; color: var(--muted); font-size: 13px; text-decoration: underline; padding: 8px; margin-top: 4px; }
 .linkish:hover:not(:disabled) { background: none; color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
@@ -230,6 +233,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     </nav>
   </header>
     <section class="stage" aria-label="วงล้อ">
+      <div class="namebox" id="nameBox" hidden>
+        <label for="nameInline">ชื่อผู้หมุน</label>
+        <input class="field" id="nameInline" maxlength="40" placeholder="พิมพ์ชื่อของคุณก่อนหมุน" autocomplete="nickname" enterkeyhint="go">
+      </div>
       <div class="wheel-box" id="wheelBox">
         <div class="pointer" id="pointer" aria-hidden="true"></div>
         <canvas id="wheel" role="img" aria-label="วงล้อของรางวัล"></canvas>
@@ -572,11 +579,15 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
   function refreshControls() {
     const left = available(claims).length;
-    spinBtn.disabled = spinning || busy || mode === "connecting" || !canWrite || left === 0;
+    const needName = mode === "supa" && !playerName;
+    spinBtn.disabled = spinning || busy || mode === "connecting" || !canWrite || left === 0 || needName;
+    $("nameInline").disabled = spinning;
+    $("nameInline").classList.toggle("need", needName && left > 0);
     shuffleBtn.disabled = spinning || left < 2;
     if (mode === "connecting") note.textContent = "กำลังโหลดของรางวัล…";
     else if (!canWrite) note.textContent = "ลิงก์นี้เปิดให้ดูอย่างเดียว ขอสิทธิ์ Contributor จากเจ้าของหน้าเพื่อหมุน";
     else if (left === 0) note.textContent = "ของรางวัลหมดแล้ว";
+    else if (needName && !spinning && Date.now() > noteHold) note.textContent = "พิมพ์ชื่อก่อน แล้วกดหมุนวงล้อ";
     else if (!spinning && Date.now() > noteHold) note.textContent = mode === "local" ? "โหมดเครื่องเดียว: ผลการสุ่มเก็บไว้ในเบราว์เซอร์นี้เท่านั้น" : "";
   }
 
@@ -677,7 +688,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
   spinBtn.addEventListener("click", async () => {
     if (spinning || busy) return;
-    if (mode === "supa" && !playerName) { askName(true); return; }
+    if (mode === "supa" && !playerName) { $("nameInline").focus(); return; }
     spinning = true; shownClaims = claims; confirmUndo = null; refreshControls(); renderBoard();
     sfx.startSpin();
     wheelBox.classList.add("spinning");
@@ -1117,9 +1128,18 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   }
 
   function showWho() {
-    $("whoBtn").hidden = mode !== "supa";
-    $("whoName").textContent = playerName || "ตั้งชื่อ";
+    $("whoBtn").hidden = true;
+    $("nameBox").hidden = mode !== "supa";
+    if (document.activeElement !== $("nameInline")) $("nameInline").value = playerName;
   }
+  $("nameInline").addEventListener("input", () => {
+    playerName = $("nameInline").value.trim().slice(0, 40);
+    store.set("wheel-player-name", playerName);
+    refreshControls();
+  });
+  $("nameInline").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); if (!spinBtn.disabled) { $("nameInline").blur(); spinBtn.click(); } }
+  });
   let spinAfterName = false;
   function askName(thenSpin) {
     spinAfterName = !!thenSpin;
